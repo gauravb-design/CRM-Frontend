@@ -59,6 +59,8 @@ export interface Contact {
   li: LiState;
   liAt: number | null;
   recycleAt: number | null;
+  /** Set when the contact arrived through a paid campaign. */
+  campaignId?: number;
 }
 
 export interface Message {
@@ -178,6 +180,58 @@ export interface ProfileMessage {
   body: string;
   /** When set, the reply carries text the user can drop straight into a field. */
   apply?: { field: "headline" | "overview" | "skills"; value: string };
+}
+
+/* -------------------------------------------------------------- Paid media */
+
+export type AdPlatform = "Google" | "Meta";
+
+/** What the business wants, which is what decides the campaign type. */
+export type AdObjective = "Sales" | "Leads" | "Traffic" | "Awareness";
+
+export type CampaignType =
+  | "Performance Max"
+  | "Search"
+  | "Demand Gen"
+  | "Advantage+ Shopping"
+  | "Lead form"
+  | "Traffic"
+  | "Awareness";
+
+export type CampaignState = "Draft" | "Learning" | "Active" | "Paused" | "Ended";
+
+export interface AdMetrics {
+  impressions: number;
+  clicks: number;
+  spend: number;
+  conversions: number;
+  revenue: number;
+  /** Meta only — average times one person saw it in the last 7 days. */
+  frequency?: number;
+  /** Days live. Nothing can be judged before the learning period is out. */
+  days: number;
+}
+
+export interface Campaign {
+  id: number;
+  platform: AdPlatform;
+  type: CampaignType;
+  name: string;
+  objective: AdObjective;
+  dailyBudget: number;
+  /** What a conversion is allowed to cost. Drives every budget check. */
+  targetCpa: number;
+  geo: string;
+  audience: string;
+  landingUrl: string;
+  /** True when a product feed or catalogue is connected. */
+  hasFeed: boolean;
+  hasTracking: boolean;
+  headlines: string[];
+  descriptions: string[];
+  state: CampaignState;
+  startedAt: number | null;
+  metrics: AdMetrics;
 }
 
 /** One row on a contact's activity timeline, assembled from everything else. */

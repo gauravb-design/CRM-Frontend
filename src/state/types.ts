@@ -1,4 +1,6 @@
 import type {
+  Campaign,
+  CampaignState,
   Channel,
   Contact,
   Deal,
@@ -38,6 +40,7 @@ export interface CrmState {
    */
   chatDrafts: Record<string, string>;
 
+  campaigns: Campaign[];
   upworkProfiles: UpworkProfile[];
   proposals: Proposal[];
   /** Profile-optimisation conversations, keyed by profile id. */
@@ -78,6 +81,12 @@ export type Action =
   | { type: "chatDismiss"; cid: number; channel: Channel }
 
   /* Upwork */
+  /* Paid media */
+  | { type: "createCampaign"; campaign: Omit<Campaign, "id" | "state" | "startedAt" | "metrics">; start: boolean }
+  | { type: "saveCampaign"; id: number; patch: Partial<Campaign> }
+  | { type: "setCampaignState"; id: number; state: CampaignState }
+  | { type: "applyFix"; id: number; label: string; patch: Partial<Campaign> }
+
   | { type: "saveProfile"; id: number; patch: Partial<UpworkProfile> }
   | { type: "deleteProfile"; id: number }
   | { type: "profileAsk"; pid: number; text: string }

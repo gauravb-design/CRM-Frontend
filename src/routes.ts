@@ -15,6 +15,9 @@ export const ROUTES = {
   sequences: "/sequences",
   sequenceNew: "/sequences/new",
   sequence: (id: number | string) => `/sequences/${id}`,
+  paid: "/paid",
+  paidNew: "/paid/new",
+  paidCampaign: (id: number | string) => `/paid/${id}`,
   upwork: "/upwork",
   upworkProfile: (id: number | string) => `/upwork/profiles/${id}`,
   upworkProposals: "/upwork/proposals",
@@ -44,6 +47,7 @@ export const NAV: Array<{
   { to: ROUTES.inbox, label: "Inbox", badge: "inbox", hidden: true },
   { to: ROUTES.linkedin, label: "LinkedIn", badge: "linkedin" },
   { to: ROUTES.upwork, label: "Upwork" },
+  { to: ROUTES.paid, label: "Paid media" },
   { to: ROUTES.sequences, label: "Sequences", hidden: true },
   { to: ROUTES.tasks, label: "Tasks", badge: "tasks", hidden: true },
 ];
@@ -68,6 +72,9 @@ export const VISIBLE_NAV = NAV.filter((n) => !n.hidden);
  * upwork/proposals   views/upwork/ProposalsPage.tsx
  * upwork/proposals/new  views/upwork/NewProposalPage.tsx
  * upwork/proposals/:id  views/upwork/ProposalPage.tsx
+ * paid               views/paid/CampaignsPage.tsx
+ * paid/new           views/paid/WizardPage.tsx
+ * paid/:id           views/paid/CampaignPage.tsx
  * sequences          views/sequences/SequencesPage.tsx  [hidden from nav]
  * sequences/new      views/sequences/SequenceBuilderPage.tsx
  * sequences/:id      views/sequences/SequenceBuilderPage.tsx

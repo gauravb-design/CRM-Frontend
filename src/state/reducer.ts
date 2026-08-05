@@ -1,11 +1,13 @@
-import { NOW, OWNERS, seedContacts } from "../data/contacts";
+import { DAY, NOW, OWNERS, seedContacts } from "../data/contacts";
 import { MAILBOXES, seedDeals, seedSequences, seedTasks } from "../data/pipeline";
+import { PAID_LEAD_SEED, seedCampaigns } from "../data/paid";
 import { seedThreads } from "../data/threads";
 import { UPWORK_CLIENT_SEED, seedProfiles, seedProposals } from "../data/upwork";
 import type { Contact } from "../data/types";
 import { fullName } from "../lib/format";
 import { isChatAction, chatReducer } from "./chatReducer";
 import { isLinkedInAction, linkedinReducer } from "./linkedinReducer";
+import { isPaidAction, paidReducer } from "./paidReducer";
 import { isSequenceAction, sequenceReducer } from "./sequenceReducer";
 import { isUpworkAction, upworkReducer } from "./upworkReducer";
 import type { Action, CrmState } from "./types";
@@ -33,8 +35,38 @@ const upworkClients = (): Contact[] =>
     recycleAt: null,
   }));
 
+/** Leads that came in from an ad. Attributed to their campaign, never sequenced. */
+const paidLeads = (): Contact[] =>
+  PAID_LEAD_SEED.map((l) => ({
+    id: l.id,
+    firstName: l.firstName,
+    lastName: l.lastName,
+    title: l.title,
+    company: l.company,
+    location: "—",
+    email: l.email,
+    linkedin: "—",
+    hook: "",
+    status: l.status,
+    owner: OWNERS[l.id % OWNERS.length],
+    source: PAID_SOURCE[l.campaignId] ?? "Paid",
+    campaignId: l.campaignId,
+    seqId: 0,
+    seqStep: 0,
+    createdAt: NOW - l.daysAgo * DAY,
+    lastAt: NOW - l.daysAgo * DAY,
+    li: "none" as const,
+    liAt: null,
+    recycleAt: null,
+  }));
+
+/** Campaign id to the label a lead carries in the contacts table. */
+const PAID_SOURCE: Record<number, string> = {
+  1: "Google Ads", 2: "Google Ads", 3: "Meta Ads", 4: "Meta Ads",
+};
+
 export const initialState = (): CrmState => ({
-  contacts: [...seedContacts(), ...upworkClients()],
+  contacts: [...seedContacts(), ...upworkClients(), ...paidLeads()],
   threads: seedThreads(),
   deals: seedDeals(),
   tasks: seedTasks(),
@@ -45,6 +77,7 @@ export const initialState = (): CrmState => ({
   aiUsed: {},
   openMsgs: {},
   chatDrafts: {},
+  campaigns: seedCampaigns(),
   upworkProfiles: seedProfiles(),
   proposals: seedProposals(),
   profileChats: {},
@@ -71,6 +104,7 @@ export function reducer(s: CrmState, a: Action): CrmState {
   if (isSequenceAction(a)) return sequenceReducer(s, a);
   if (isChatAction(a)) return chatReducer(s, a);
   if (isUpworkAction(a)) return upworkReducer(s, a);
+  if (isPaidAction(a)) return paidReducer(s, a);
   if (isLinkedInAction(a)) return linkedinReducer(s, a);
 
   switch (a.type) {

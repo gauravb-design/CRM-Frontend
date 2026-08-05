@@ -9,6 +9,7 @@ import "./checks/core";
 import "./checks/importing";
 import "./checks/linkedin";
 import "./checks/upwork";
+import "./checks/paid";
 import { results } from "./checks/harness";
 
 console.log(`\n${results.pass} passed, ${results.fails.length} failed`);

@@ -14,6 +14,9 @@ import { InboxPage } from "./views/inbox/InboxPage";
 import { LinkedInPage } from "./views/linkedin/LinkedInPage";
 import { SequenceBuilderPage } from "./views/sequences/SequenceBuilderPage";
 import { SequencesPage } from "./views/sequences/SequencesPage";
+import { CampaignPage } from "./views/paid/CampaignPage";
+import { CampaignsPage } from "./views/paid/CampaignsPage";
+import { WizardPage } from "./views/paid/WizardPage";
 import { NewProposalPage } from "./views/upwork/NewProposalPage";
 import { ProfilePage } from "./views/upwork/ProfilePage";
 import { ProfilesPage } from "./views/upwork/ProfilesPage";
@@ -43,6 +46,9 @@ export function App() {
           <Route path="upwork/proposals" element={<ProposalsPage />} />
           <Route path="upwork/proposals/new" element={<NewProposalPage />} />
           <Route path="upwork/proposals/:id" element={<ProposalPage />} />
+          <Route path="paid" element={<CampaignsPage />} />
+          <Route path="paid/new" element={<WizardPage />} />
+          <Route path="paid/:id" element={<CampaignPage />} />
           <Route path="sequences" element={<SequencesPage />} />
           <Route path="sequences/new" element={<SequenceBuilderPage />} />
           <Route path="sequences/:id" element={<SequenceBuilderPage />} />

@@ -191,10 +191,79 @@ sends. Keep that; it is the reason the feature is safe to ship.
 
 ---
 
+## 6b. Paid media — Google and Meta
+
+The only channel with a real API on both sides, so it is the only one that can
+be genuinely automated. Everything below assumes Google Ads API and Meta
+Marketing API credentials.
+
+### What syncs, and which way
+
+| | Direction | Notes |
+| --- | --- | --- |
+| Campaign create / edit | **out** | We write budgets, targeting and assets |
+| Pause / resume | **out** | |
+| Metrics | **in** | Pull nightly per campaign; store the counters, never the ratios |
+| Leads | **in** | Google: Lead Form extensions webhook. Meta: Lead Ads webhook, or `/leads` polling |
+
+**Store counters, derive everything else.** `impressions, clicks, spend,
+conversions, revenue, frequency, days` are stored; CTR, CPC, CPA, ROAS and
+daily spend are computed (`lib/paidMetrics.ts`). A stored ratio goes stale the
+moment either side of it changes.
+
+### Leads are contacts, not a number
+
+A paid lead is an ordinary `Contact` with `campaignId` set and `source` of
+`"Google Ads"` / `"Meta Ads"`. That is what makes the most valuable number on
+the screen possible: **what the platform reports against what actually
+arrived.** Google saying 41 conversions while 4 contacts exist is a broken form
+or a broken tag, and no amount of bidding work fixes it. `diagnose()` raises it
+as a blocker above every optimisation suggestion.
+
+Webhook handlers must be idempotent — both platforms retry, and a duplicated
+lead corrupts exactly the number this depends on. Dedupe on the platform's own
+lead id.
+
+### The intelligence is pure functions, deliberately
+
+`lib/paidWizard.ts`, `lib/paidDiagnose.ts`, `lib/paidMetrics.ts` and
+`lib/profileScore.ts` have **no React and no imports outside `data/`**. They
+are written that way so the backend can run the same code — a nightly job that
+diagnoses every campaign and emails the blockers needs identical logic to the
+screen, and two implementations would drift.
+
+Move them to a shared package rather than reimplementing. The thresholds they
+read (`LEARNING`, `CTR_FLOOR`, `LIMITS`, `FREQUENCY_CEILING`) belong in the
+same package and should eventually be per-account settings.
+
+### Paid endpoints
+
+- `GET /campaigns` — platform, state filters
+- `POST /campaigns` — `{ campaign, start }`; start puts it in Learning, not Active
+- `PATCH /campaigns/:id` — budget, targeting, assets
+- `POST /campaigns/:id/state` — pause / resume
+- `GET /campaigns/:id/leads` — the contacts it produced
+- `GET /campaigns/:id/diagnosis` — findings, so a cron can act on them too
+- `POST /campaigns/:id/apply` — `{ patch }` from a finding's `fix`
+- `POST /webhooks/google/leads`, `POST /webhooks/meta/leads` — inbound leads
+- `POST /wizard/recommend` — only if the recommendation becomes model-driven;
+  the rule-based version should stay client-side, it needs no round trip
+
+**Anything that changes a live campaign resets its learning phase.** The API
+should return the new learning status in the response so the UI can say so
+rather than guess.
+
 ## 7. Endpoints by screen
+
+**Everything the UI can do must be reachable over the API.** No behaviour lives
+only in a component: each reducer case is one endpoint, each pure `lib/`
+function is logic the server can run too. The rule to hold when adding
+anything: if a cron job or another service could not do it without a browser,
+it is in the wrong place.
 
 | Screen | Needs |
 | --- | --- |
+| Paid media | the paid endpoints in §6b |
 | Contacts | `GET /contacts` (tab, owner, search, page), `PATCH /contacts/:id`, `POST /contacts`, `POST /contacts/bulk/suppress`, `POST /contacts/bulk/enrol` |
 | Import | `POST /import/analyse` (dry run, returns the breakdown), `POST /import/commit` |
 | Inbox | `GET /threads`, `GET /threads/:id`, `POST /threads/:id/send`, `POST /threads/:id/close`, `GET /inbox/unmatched` |

@@ -112,6 +112,34 @@ export function suggestedReply(s: CrmState, c: Contact, channel: Channel): strin
   return !started && channel === "LinkedIn" && c.li === "accepted" ? liVariants(c)[0] : "";
 }
 
+/* -------------------------------------------------------------- Paid media */
+
+export const campaignById = (s: CrmState, id: number) =>
+  s.campaigns.find((c) => c.id === id) ?? null;
+
+/** The leads a campaign actually put into the CRM, newest first. */
+export const leadsFor = (s: CrmState, campaignId: number) =>
+  s.contacts
+    .filter((c) => c.campaignId === campaignId)
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+/** Every lead from one platform, or all of paid. */
+export function paidLeads(s: CrmState, platform: "all" | string) {
+  const ids = new Set(
+    s.campaigns.filter((c) => platform === "all" || c.platform === platform).map((c) => c.id),
+  );
+  return s.contacts.filter((c) => c.campaignId !== undefined && ids.has(c.campaignId));
+}
+
+/** One pass: platform and state together, never chained. */
+export function campaignsFor(s: CrmState, platform: string, state: string) {
+  return s.campaigns.filter(
+    (c) =>
+      (platform === "all" || c.platform === platform) &&
+      (state === "all" || c.state === state),
+  );
+}
+
 /* ------------------------------------------------------------------ Upwork */
 
 export const profileById = (s: CrmState, id: number) =>
