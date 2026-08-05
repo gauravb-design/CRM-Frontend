@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Self-hosted so there is no render-blocking request to Google on every load. */
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/600.css";
+
+/*
+ * Tokens from the design prototype, registered through Tailwind v4's @theme so
+ * each one is a real utility: bg-canvas, text-muted, border-line.
+ */
+@theme {
+  --color-canvas: #f7f6f3;
+  --color-surface: #ffffff;
+  --color-ink: #17181b;
+  --color-ink2: #45474d;
+  --color-muted: #7a7d85;
+  --color-faint: #a3a6ad;
+  --color-line: #e6e3dd;
+  --color-line2: #efede8;
+  --color-hover: #fbfaf8;
+  --color-selected: #f0efeb;
+  --color-stone: #f2f0ec;
+
+  --color-green: #1b4d3e;
+  --color-greensoft: #e8f0ec;
+  --color-amber: #8a5a00;
+  --color-ambersoft: #fdf3e0;
+  --color-amberline: #f0e2c4;
+  --color-danger: #a32b1e;
+  --color-dangersoft: #fbeae7;
+  --color-blue: #3a4a63;
+  --color-bluesoft: #eef1f6;
+
+  --font-sans: "DM Sans", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numerals line up in tables and counters. */
+.n {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Native select arrows sit hard against the right edge and differ per OS. Two
+   gradients draw the chevron 12px in, with padding so a long option label can
+   never run underneath it. */
+select.chev {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #7a7d85 50%),
+    linear-gradient(135deg, #7a7d85 50%, transparent 50%);
+  background-position: calc(100% - 17px) center, calc(100% - 12px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #1b4d3e;
+  outline-offset: -1px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #dfdcd5;
+  border-radius: 10px;
+  border: 3px solid #f7f6f3;
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fadein {
+  animation: fadein 0.16s ease-out;
+}
