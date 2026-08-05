@@ -4,6 +4,12 @@ import type { Contact } from "../data/types";
 export const fullName = (c: Contact) => `${c.firstName} ${c.lastName}`;
 export const initials = (c: Contact) => (c.firstName[0] + c.lastName[0]).toUpperCase();
 
+/** Two-letter mark from any label, for avatars with no person behind them. */
+export function letterMark(text: string): string {
+  const words = text.replace(/[^a-zA-Z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+  return ((words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")).toUpperCase() || "—";
+}
+
 export const money = (n: number) => `$${Math.round(n / 1000)}k`;
 
 export const countWords = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;

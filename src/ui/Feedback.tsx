@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../lib/format";
 import { useCrm } from "../state/store";
 
@@ -28,9 +28,12 @@ export function Empty({ children, dashed }: { children: ReactNode; dashed?: bool
   );
 }
 
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
+/** Takes the usual div props so a card can be a whole clickable row. */
+export function Card({ children, className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cx("bg-surface border border-line rounded-[10px]", className)}>{children}</div>
+    <div className={cx("bg-surface border border-line rounded-[10px]", className)} {...rest}>
+      {children}
+    </div>
   );
 }
 

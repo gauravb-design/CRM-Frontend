@@ -95,31 +95,51 @@ export function liConversations(s: CrmState, tab: string, search: string) {
   );
 }
 
-/** A contact has at most one LinkedIn conversation. */
-export const liThreadFor = (s: CrmState, cid: number) =>
-  s.threads.find((t) => t.channel === "LinkedIn" && t.cid === cid) ?? null;
+/** A contact has at most one conversation per manual channel. */
+export const chatThreadFor = (s: CrmState, cid: number, channel: Channel) =>
+  s.threads.find((t) => t.channel === channel && t.cid === cid) ?? null;
 
 /**
  * The reply waiting to be sent. Written by the AI the moment their message was
  * logged, then editable. Empty means there is nothing pending — either they
  * have not written, or the draft was sent or dismissed.
  */
-export function suggestedReply(s: CrmState, c: Contact): string {
-  const stored = s.liDrafts[c.id];
+export function suggestedReply(s: CrmState, c: Contact, channel: Channel): string {
+  const stored = s.chatDrafts[`${channel}:${c.id}`];
   if (stored !== undefined) return stored;
-  const started = s.threads.some((t) => t.channel === "LinkedIn" && t.cid === c.id && t.msgs.length);
-  return !started && c.li === "accepted" ? liVariants(c)[0] : "";
+  const started = s.threads.some((t) => t.channel === channel && t.cid === c.id && t.msgs.length);
+  // A fresh LinkedIn connection is offered an opener; Upwork starts from the proposal.
+  return !started && channel === "LinkedIn" && c.li === "accepted" ? liVariants(c)[0] : "";
 }
 
+/* ------------------------------------------------------------------ Upwork */
+
+export const profileById = (s: CrmState, id: number) =>
+  s.upworkProfiles.find((p) => p.id === id) ?? null;
+
+export const proposalById = (s: CrmState, id: number) =>
+  s.proposals.find((p) => p.id === id) ?? null;
+
+export const proposalsFor = (s: CrmState, state: string) =>
+  state === "all" ? s.proposals : s.proposals.filter((p) => p.state === state);
+
 /** What they said last, which is what the AI drafts a reply to. */
-export function lastInboundFrom(s: CrmState, cid: number): string {
-  const t = liThreadFor(s, cid);
+export function lastInboundFrom(s: CrmState, cid: number, channel: Channel = "LinkedIn"): string {
+  const t = chatThreadFor(s, cid, channel);
   if (!t) return "";
   for (let i = t.msgs.length - 1; i >= 0; i--) {
     if (t.msgs[i].dir === "in") return t.msgs[i].body;
   }
   return "";
 }
+
+/**
+ * LinkedIn does not let you message someone who has not accepted, so there is
+ * no conversation to show until they have. Anything before that is a request
+ * sitting in their queue, not a chat.
+ */
+export const canChatOnLinkedIn = (c: Contact) =>
+  c.li === "accepted" || c.li === "messaged" || c.li === "conversation";
 
 /** People who accepted or wrote back — the ones actually waiting on us. */
 export const liWaiting = (s: CrmState) =>

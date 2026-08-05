@@ -1,7 +1,7 @@
 import { NavLink } from "react-router";
 import { LI_DAILY_CAP, MAILBOXES } from "../data/pipeline";
 import { cx } from "../lib/format";
-import { NAV, ROUTES } from "../routes";
+import { ROUTES, VISIBLE_NAV } from "../routes";
 import { countThreads, liWaiting } from "../state/selectors";
 import { useCrm } from "../state/store";
 import { Label } from "../ui/Pill";
@@ -47,7 +47,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 min-h-0 overflow-y-auto px-[10px]">
-        {NAV.map((it) => {
+        {VISIBLE_NAV.map((it) => {
           const count = it.badge ? badges[it.badge] : 0;
           return (
           <NavLink

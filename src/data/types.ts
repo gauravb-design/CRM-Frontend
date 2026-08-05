@@ -20,7 +20,10 @@ export type LiState =
   | "conversation"
   | "recycled";
 
-export type Channel = "Email" | "LinkedIn";
+export type Channel = "Email" | "LinkedIn" | "Upwork";
+
+/** Channels with no API, where the record is whatever a person pastes in. */
+export const MANUAL_CHANNELS: Channel[] = ["LinkedIn", "Upwork"];
 
 /** Which pile a conversation sits in. Drives the inbox tabs. */
 export type ThreadState = "needs_reply" | "awaiting" | "queued" | "done" | "bounced";
@@ -131,6 +134,50 @@ export interface Mailbox {
   address: string;
   sentToday: number;
   cap: number;
+}
+
+/* ------------------------------------------------------------------ Upwork */
+
+export interface UpworkProfile {
+  id: number;
+  name: string;
+  headline: string;
+  /** Hourly rate in USD. */
+  rate: number;
+  overview: string;
+  skills: string[];
+  portfolio: number;
+  status: "Draft" | "Live" | "Paused";
+  updatedAt: number;
+}
+
+export type ProposalState = "Draft" | "Sent" | "Replied" | "Interview" | "Hired" | "Declined";
+
+export const PROPOSAL_STATES: ProposalState[] = [
+  "Draft", "Sent", "Replied", "Interview", "Hired", "Declined",
+];
+
+export interface Proposal {
+  id: number;
+  /** The client this proposal created. Every proposal has one. */
+  cid: number;
+  profileId: number;
+  jobTitle: string;
+  jobUrl: string;
+  budget: string;
+  connects: number;
+  body: string;
+  state: ProposalState;
+  at: number;
+}
+
+/** A turn in the profile-optimisation chat. */
+export interface ProfileMessage {
+  id: number;
+  role: "you" | "ai";
+  body: string;
+  /** When set, the reply carries text the user can drop straight into a field. */
+  apply?: { field: "headline" | "overview" | "skills"; value: string };
 }
 
 /** One row on a contact's activity timeline, assembled from everything else. */

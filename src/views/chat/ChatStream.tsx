@@ -1,22 +1,35 @@
 import { useEffect, useRef } from "react";
-import type { Contact } from "../../data/types";
+import type { Channel, Contact } from "../../data/types";
 import { countWords, cx, fullName, initials, rel } from "../../lib/format";
-import { profileUrl } from "../../lib/linkedin";
-import { liThreadFor, suggestedReply } from "../../state/selectors";
+import { chatThreadFor, suggestedReply } from "../../state/selectors";
 import { useCrm } from "../../state/store";
 import { Button, LinkButton } from "../../ui/Button";
 import { Avatar } from "../../ui/Pill";
 
+interface Props {
+  contact: Contact;
+  channel: Channel;
+  /** Where "open the conversation where it really lives" points. */
+  externalUrl?: string | null;
+  externalLabel?: string;
+  emptyNote: string;
+  /** History only — no draft, nothing to act on. Used where the channel will
+   *  not accept a message, so offering one would be a lie. */
+  readOnly?: boolean;
+}
+
 /**
- * One stream, the way any chat reads: their messages on the left, ours on the
- * right, and the AI's reply arriving as the next turn rather than in a panel
- * somewhere else. The draft is the last bubble — already written, editable in
- * place, and marked as not sent until the rep says so.
+ * One stream, the way any chat reads: theirs on the left, ours on the right,
+ * and the AI's reply arriving as the next turn rather than in a panel
+ * somewhere else. Shared by LinkedIn and Upwork because both are the same
+ * interaction — no API, so the record is whatever gets pasted in.
  */
-export function ChatThread({ contact }: { contact: Contact }) {
+export function ChatStream({
+  contact, channel, externalUrl, externalLabel, emptyNote, readOnly,
+}: Props) {
   const { state, dispatch } = useCrm();
-  const thread = liThreadFor(state, contact.id);
-  const draft = suggestedReply(state, contact);
+  const thread = chatThreadFor(state, contact.id, channel);
+  const draft = readOnly ? "" : suggestedReply(state, contact, channel);
   const bottom = useRef<HTMLDivElement>(null);
 
   // A chat sits at the newest message, not the oldest.
@@ -24,26 +37,21 @@ export function ChatThread({ contact }: { contact: Contact }) {
     bottom.current?.scrollIntoView({ block: "end" });
   }, [thread?.msgs.length, draft]);
 
-  const url = profileUrl(contact.linkedin);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(draft);
-      dispatch({ type: "toast", text: "Copied. Paste it into LinkedIn, then mark it sent." });
+      dispatch({ type: "toast", text: `Copied. Paste it into ${channel}, then mark it sent.` });
     } catch {
       dispatch({ type: "toast", text: "Could not reach the clipboard — select the text and copy it by hand." });
     }
   };
 
-  const empty = !thread || thread.msgs.length === 0;
-  if (empty && !draft) {
+  if ((!thread || thread.msgs.length === 0) && !draft) {
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center p-10">
         <div className="text-center max-w-[340px]">
           <div className="text-[13.5px] font-medium">Nothing logged yet</div>
-          <p className="text-[12.5px] text-muted leading-relaxed mt-[6px]">
-            Paste what they sent you in LinkedIn and a reply gets written for you. Nothing arrives
-            here on its own — LinkedIn gives us no API to read.
-          </p>
+          <p className="text-[12.5px] text-muted leading-relaxed mt-[6px]">{emptyNote}</p>
         </div>
       </div>
     );
@@ -90,22 +98,33 @@ export function ChatThread({ contact }: { contact: Contact }) {
               <textarea
                 className="w-full min-h-[76px] text-[13px] leading-[1.7] bg-transparent border-none resize-y outline-none px-[4px]"
                 value={draft}
-                onChange={(e) => dispatch({ type: "liRedraft", cid: contact.id, text: e.target.value })}
+                onChange={(e) =>
+                  dispatch({ type: "chatDraft", cid: contact.id, channel, text: e.target.value })
+                }
               />
               <div className="flex items-center gap-2 flex-wrap justify-end pt-[6px]">
-                <Button small variant="quiet" onClick={() => dispatch({ type: "liDismissDraft", cid: contact.id })}>
+                <Button
+                  small variant="quiet"
+                  onClick={() => dispatch({ type: "chatDismiss", cid: contact.id, channel })}
+                >
                   Discard
                 </Button>
-                <Button small onClick={() => dispatch({ type: "liRegenerate", cid: contact.id })}>
+                <Button small onClick={() => dispatch({ type: "chatRegenerate", cid: contact.id, channel })}>
                   Another angle
                 </Button>
-                {url && <LinkButton small href={url}>Open LinkedIn ↗</LinkButton>}
+                {externalUrl && (
+                  <LinkButton small href={externalUrl}>
+                    {externalLabel ?? `Open ${channel} ↗`}
+                  </LinkButton>
+                )}
                 <Button small onClick={copy}>Copy</Button>
                 <Button
-                  small
-                  variant="primary"
+                  small variant="primary"
                   onClick={() =>
-                    dispatch({ type: "liLogChat", cid: contact.id, messages: [{ dir: "out", body: draft }] })
+                    dispatch({
+                      type: "chatLog", cid: contact.id, channel,
+                      messages: [{ dir: "out", body: draft }],
+                    })
                   }
                 >
                   Mark sent

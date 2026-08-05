@@ -1,14 +1,40 @@
 import { NOW, OWNERS, seedContacts } from "../data/contacts";
 import { MAILBOXES, seedDeals, seedSequences, seedTasks } from "../data/pipeline";
 import { seedThreads } from "../data/threads";
+import { UPWORK_CLIENT_SEED, seedProfiles, seedProposals } from "../data/upwork";
 import type { Contact } from "../data/types";
 import { fullName } from "../lib/format";
+import { isChatAction, chatReducer } from "./chatReducer";
 import { isLinkedInAction, linkedinReducer } from "./linkedinReducer";
 import { isSequenceAction, sequenceReducer } from "./sequenceReducer";
+import { isUpworkAction, upworkReducer } from "./upworkReducer";
 import type { Action, CrmState } from "./types";
 
+/**
+ * Upwork clients are not sourced or sequenced — they arrive because a proposal
+ * was written to them, so they carry none of the outbound machinery.
+ */
+const upworkClients = (): Contact[] =>
+  UPWORK_CLIENT_SEED.map((c) => ({
+    ...c,
+    location: "—",
+    email: "—",
+    linkedin: "—",
+    hook: "",
+    status: "Replied" as const,
+    owner: OWNERS[0],
+    source: "Upwork",
+    seqId: 0,
+    seqStep: 0,
+    createdAt: NOW,
+    lastAt: NOW,
+    li: "none" as const,
+    liAt: null,
+    recycleAt: null,
+  }));
+
 export const initialState = (): CrmState => ({
-  contacts: seedContacts(),
+  contacts: [...seedContacts(), ...upworkClients()],
   threads: seedThreads(),
   deals: seedDeals(),
   tasks: seedTasks(),
@@ -18,7 +44,10 @@ export const initialState = (): CrmState => ({
   compose: {},
   aiUsed: {},
   openMsgs: {},
-  liDrafts: {},
+  chatDrafts: {},
+  upworkProfiles: seedProfiles(),
+  proposals: seedProposals(),
+  profileChats: {},
   liSentToday: 12,
   liWeek: 58,
   toast: "",
@@ -40,6 +69,8 @@ function clearDraft(s: CrmState, tid: number) {
 
 export function reducer(s: CrmState, a: Action): CrmState {
   if (isSequenceAction(a)) return sequenceReducer(s, a);
+  if (isChatAction(a)) return chatReducer(s, a);
+  if (isUpworkAction(a)) return upworkReducer(s, a);
   if (isLinkedInAction(a)) return linkedinReducer(s, a);
 
   switch (a.type) {

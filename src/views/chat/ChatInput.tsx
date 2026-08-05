@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Contact } from "../../data/types";
+import type { Channel, Contact } from "../../data/types";
 import { describeParse, parseChat } from "../../lib/chatParse";
 import { cx } from "../../lib/format";
 import { useCrm } from "../../state/store";
@@ -10,10 +10,9 @@ import { Button } from "../../ui/Button";
  * yours; paste and the parser works out who said what. Adding a message from
  * them is what produces the drafted reply above — there is nothing to press.
  */
-export function ChatComposer({ contact }: { contact: Contact }) {
+export function ChatInput({ contact, channel }: { contact: Contact; channel: Channel }) {
   const { dispatch } = useCrm();
   const [text, setText] = useState("");
-
   const parsed = parseChat(text, contact);
 
   const add = () => {
@@ -21,15 +20,8 @@ export function ChatComposer({ contact }: { contact: Contact }) {
       dispatch({ type: "toast", text: "Nothing to add — the box is empty." });
       return;
     }
-    dispatch({ type: "liLogChat", cid: contact.id, messages: parsed });
+    dispatch({ type: "chatLog", cid: contact.id, channel, messages: parsed });
     setText("");
-  };
-
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      add();
-    }
   };
 
   return (
@@ -38,7 +30,12 @@ export function ChatComposer({ contact }: { contact: Contact }) {
         className="w-full min-h-[80px] text-[13px] leading-[1.7] bg-surface border border-line rounded-[9px] px-[14px] py-3 resize-y"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={onKey}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            add();
+          }
+        }}
         placeholder={`Paste what ${contact.firstName} sent, or the whole conversation`}
       />
 

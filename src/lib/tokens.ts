@@ -18,6 +18,7 @@ export const STATUS_PILL: Record<ContactStatus, string> = {
 export const CHANNEL_PILL: Record<Channel, string> = {
   Email: "bg-stone text-muted",
   LinkedIn: "bg-bluesoft text-blue",
+  Upwork: "bg-greensoft text-green",
 };
 
 export const LI_LABEL: Record<LiState, string> = {

@@ -1,6 +1,17 @@
 import { cx } from "../lib/format";
+import { placeholderImage } from "../lib/placeholder";
 
-export function Pill({ tone, children }: { tone: string; children: React.ReactNode }) {
+interface PillProps {
+  /**
+   * A background/text Tailwind pair, e.g. `"bg-greensoft text-green"` — not a
+   * colour name. Take it from a map in lib/tokens.ts so the same state reads
+   * the same everywhere; a bare `"green"` compiles and renders unstyled.
+   */
+  tone: string;
+  children: React.ReactNode;
+}
+
+export function Pill({ tone, children }: PillProps) {
   return (
     <span className={cx("text-[11px] px-[9px] py-[2px] rounded-[5px] whitespace-nowrap", tone)}>
       {children}
@@ -26,6 +37,27 @@ export function Avatar({ children, size = 32, muted }: AvatarProps) {
     >
       {children}
     </span>
+  );
+}
+
+interface ThumbProps {
+  /** Also what the artwork is generated from, so it stays stable per row. */
+  seed: string;
+  alt: string;
+  size?: number;
+  className?: string;
+}
+
+/** Square artwork for things that are not people — profiles, jobs, listings. */
+export function Thumb({ seed, alt, size = 48, className }: ThumbProps) {
+  return (
+    <img
+      src={placeholderImage(seed, size)}
+      width={size}
+      height={size}
+      alt={alt}
+      className={cx("rounded-[8px] shrink-0 object-cover", className)}
+    />
   );
 }
 

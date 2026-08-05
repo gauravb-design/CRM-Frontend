@@ -1,15 +1,20 @@
 import type {
+  Channel,
   Contact,
   Deal,
   DealStage,
   LiLogEntry,
   LiState,
   Note,
+  ProfileMessage,
+  Proposal,
+  ProposalState,
   Sequence,
   SequenceStep,
   Task,
   Thread,
   ThreadState,
+  UpworkProfile,
 } from "../data/types";
 
 export interface CrmState {
@@ -27,8 +32,16 @@ export interface CrmState {
   aiUsed: Record<number, boolean>;
   /** Per-message expand state, keyed "threadId:index". Absent means default. */
   openMsgs: Record<string, boolean>;
-  /** Overridden LinkedIn openers keyed by contact id. */
-  liDrafts: Record<number, string>;
+  /**
+   * The pending reply in a manual-channel chat, keyed `${channel}:${cid}`.
+   * Written by the AI when their message is logged, then editable.
+   */
+  chatDrafts: Record<string, string>;
+
+  upworkProfiles: UpworkProfile[];
+  proposals: Proposal[];
+  /** Profile-optimisation conversations, keyed by profile id. */
+  profileChats: Record<number, ProfileMessage[]>;
 
   liSentToday: number;
   liWeek: number;
@@ -57,10 +70,21 @@ export type Action =
   | { type: "liSet"; cid: number; li: LiState; note: string }
   | { type: "liRecycle"; cid: number }
   | { type: "liRestore"; cid: number }
-  | { type: "liRedraft"; cid: number; text: string }
-  | { type: "liLogChat"; cid: number; messages: Array<{ dir: "in" | "out"; body: string }> }
-  | { type: "liRegenerate"; cid: number }
-  | { type: "liDismissDraft"; cid: number }
+  /* Manual-channel chat. One set of actions for LinkedIn and Upwork — the
+   * only difference between them is which drafter writes the reply. */
+  | { type: "chatLog"; cid: number; channel: Channel; messages: Array<{ dir: "in" | "out"; body: string }> }
+  | { type: "chatDraft"; cid: number; channel: Channel; text: string }
+  | { type: "chatRegenerate"; cid: number; channel: Channel }
+  | { type: "chatDismiss"; cid: number; channel: Channel }
+
+  /* Upwork */
+  | { type: "saveProfile"; id: number; patch: Partial<UpworkProfile> }
+  | { type: "deleteProfile"; id: number }
+  | { type: "profileAsk"; pid: number; text: string }
+  | { type: "profileApply"; pid: number; field: "headline" | "overview" | "skills"; value: string }
+  | { type: "createProposal"; proposal: Omit<Proposal, "id" | "cid" | "at">; client: Omit<Contact, "id"> }
+  | { type: "saveProposal"; id: number; body: string }
+  | { type: "setProposalState"; id: number; state: ProposalState }
   | { type: "saveSequence"; id: number | null; name: string; note: string; steps: SequenceStep[] }
   | { type: "deleteSequence"; id: number }
   | { type: "toggleSequence"; id: number };

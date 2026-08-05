@@ -1,7 +1,7 @@
 import type { Contact } from "../../data/types";
 import { cx, firstLine, fullName, initials, rel } from "../../lib/format";
 import { LI_LABEL, LI_PILL } from "../../lib/tokens";
-import { liThreadFor } from "../../state/selectors";
+import { chatThreadFor } from "../../state/selectors";
 import { useCrm } from "../../state/store";
 import { Empty } from "../../ui/Feedback";
 import { Avatar, Pill } from "../../ui/Pill";
@@ -21,7 +21,7 @@ export function ConversationList({ rows, openId, onOpen, emptyNote }: Props) {
   return (
     <>
       {rows.map((c) => {
-        const thread = liThreadFor(state, c.id);
+        const thread = chatThreadFor(state, c.id, "LinkedIn");
         const last = thread?.msgs[thread.msgs.length - 1];
         const theirTurn = last?.dir === "in";
         const on = openId === c.id;

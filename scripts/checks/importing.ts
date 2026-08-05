@@ -60,9 +60,9 @@ import { S, ok, run } from "./harness";
     "Aarav S.",
   ).ready;
   const s = run(S, { type: "importContacts", contacts: rows, seqId: 2 });
-  ok("contacts appended", s.contacts.length === 17, s.contacts.length);
-  ok("ids stay unique", new Set(s.contacts.map((c) => c.id)).size === 17);
-  ok("enrolled onto the chosen sequence", s.contacts.slice(15).every((c) => c.seqId === 2));
+  ok("contacts appended", s.contacts.length === S.contacts.length + 2, s.contacts.length);
+  ok("ids stay unique", new Set(s.contacts.map((c) => c.id)).size === s.contacts.length);
+  ok("enrolled onto the chosen sequence", s.contacts.slice(-2).every((c) => c.seqId === 2));
   ok("toast names the sequence", /Gulf/.test(s.toast), s.toast);
 }
 

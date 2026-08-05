@@ -6,16 +6,19 @@ import { cx, fullName, initials } from "../../lib/format";
 import { profileUrl } from "../../lib/linkedin";
 import { LI_LABEL, LI_PILL } from "../../lib/tokens";
 import { ROUTES } from "../../routes";
-import { LI_TABS, contactById, liConversations, liWaiting } from "../../state/selectors";
+import {
+  LI_TABS, canChatOnLinkedIn, chatThreadFor, contactById, liConversations, liWaiting,
+} from "../../state/selectors";
 import { useCrm } from "../../state/store";
 import { Button, LinkButton } from "../../ui/Button";
 import { Notice } from "../../ui/Feedback";
 import { inputCls } from "../../ui/Field";
 import { Avatar, Pill } from "../../ui/Pill";
 import { Tabs } from "../../ui/Tabs";
-import { ChatComposer } from "./ChatComposer";
-import { ChatThread } from "./ChatThread";
+import { ChatInput } from "../chat/ChatInput";
+import { ChatStream } from "../chat/ChatStream";
 import { ConversationList } from "./ConversationList";
+import { PreChat } from "./PreChat";
 
 const EMPTIES: Record<string, string> = {
   to_send: "Nothing to send. Import a list to fill the queue.",
@@ -37,38 +40,11 @@ export function LinkedInPage() {
   const capped = state.liSentToday >= LI_DAILY_CAP;
   const url = open ? profileUrl(open.linkedin) : null;
 
-  /* The funnel action for whichever step this person is on. Everything else
-   * about them lives in the chat below. */
-  const funnelAction = () => {
-    if (!open) return null;
-    switch (open.li) {
-      case "none":
-        return (
-          <Button variant="primary" onClick={() => dispatch({ type: "liSend", cid: open.id })}>
-            Mark request sent
-          </Button>
-        );
-      case "requested":
-        return (
-          <Button
-            variant="primary"
-            onClick={() => dispatch({ type: "liSet", cid: open.id, li: "accepted", note: "Connection accepted" })}
-          >
-            They accepted
-          </Button>
-        );
-      case "recycled":
-        return (
-          <Button variant="primary" onClick={() => dispatch({ type: "liRestore", cid: open.id })}>
-            Bring back
-          </Button>
-        );
-      default:
-        return (
-          <Button onClick={() => dispatch({ type: "liRecycle", cid: open.id })}>Recycle</Button>
-        );
-    }
-  };
+  /* Before a connection is accepted the state actions belong to PreChat, which
+   * is the only thing on screen then. Duplicating them up here would give two
+   * buttons for one step. */
+  const chatting = open ? canChatOnLinkedIn(open) : false;
+  const history = open ? chatThreadFor(state, open.id, "LinkedIn") : null;
 
   return (
     <>
@@ -139,11 +115,33 @@ export function LinkedInPage() {
                   <Button small onClick={() => nav(ROUTES.contactEdit(open.id))}>Add profile URL</Button>
                 )}
                 <Button small onClick={() => nav(ROUTES.contact(open.id))}>Record</Button>
-                {funnelAction()}
+                {chatting && (
+                  <Button small onClick={() => dispatch({ type: "liRecycle", cid: open.id })}>
+                    Recycle
+                  </Button>
+                )}
               </div>
 
-              <ChatThread contact={open} />
-              <ChatComposer key={open.id} contact={open} />
+              {chatting ? (
+                <>
+                  <ChatStream
+                    contact={open}
+                    channel="LinkedIn"
+                    externalUrl={url}
+                    emptyNote="They accepted, so you can message them now. Write it here, copy it into LinkedIn, then mark it sent."
+                  />
+                  <ChatInput key={open.id} contact={open} channel="LinkedIn" />
+                </>
+              ) : (
+                <>
+                  {/* Withdrawn or recycled people can still have history worth
+                      reading, but there is nothing to send, so it is read-only. */}
+                  {history && history.msgs.length > 0 && (
+                    <ChatStream contact={open} channel="LinkedIn" emptyNote="" readOnly />
+                  )}
+                  <PreChat contact={open} compact={Boolean(history?.msgs.length)} />
+                </>
+              )}
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center p-10">

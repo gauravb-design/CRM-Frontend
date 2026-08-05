@@ -7,9 +7,11 @@ import {
 import { S, ok, run } from "./harness";
 
 /* ---------------------------------------------------------------- seed */
-ok("15 contacts seeded", S.contacts.length === 15, S.contacts.length);
+const OUTBOUND = S.contacts.filter((c) => c.source === "Apollo");
+ok("15 outbound contacts seeded", OUTBOUND.length === 15, OUTBOUND.length);
+ok("3 Upwork clients seeded", S.contacts.filter((c) => c.source === "Upwork").length === 3);
 ok("10 threads seeded", S.threads.length === 10, S.threads.length);
-ok("every contact has a hook", S.contacts.every((c) => c.hook.length > 10));
+ok("every outbound contact has a hook", OUTBOUND.every((c) => c.hook.length > 10));
 
 /* -------------------------------------------------------------- drafts */
 ok("queued thread seeds an opener", draftFor(S, 7).includes("size guide is an image"), draftFor(S, 7).slice(0, 40));
@@ -74,8 +76,9 @@ ok("reply thread starts empty", draftFor(S, 1) === "");
     run(S, { type: "suppressMany", ids: [1, 2] }).contacts.filter((c) => c.status === "Unsubscribed").length === 3);
 
   const added = run(S, { type: "addContact", contact: blankContact("Jamie Fowler", "Fowler Group", "MD", "j@f.com", "") });
-  ok("contact added", added.contacts.length === 16);
-  ok("name split correctly", added.contacts[15].firstName === "Jamie" && added.contacts[15].lastName === "Fowler");
+  ok("contact added", added.contacts.length === S.contacts.length + 1, added.contacts.length);
+  const last = added.contacts[added.contacts.length - 1];
+  ok("name split correctly", last.firstName === "Jamie" && last.lastName === "Fowler");
 
   ok("every tab resolves", CONTACT_TABS.every((t) => Array.isArray(filteredContacts(S, t.id, "all", ""))));
   ok("owner filter works", filteredContacts(S, "all", "Neha K.", "").every((c) => c.owner === "Neha K."));
